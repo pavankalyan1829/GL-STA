@@ -125,16 +125,6 @@ The pipeline can generate the following local artifacts:
 
 These files are ignored by Git because they are generated or large. Include them in a release bundle only when required.
 
-## Suggested Paper Module Mapping
-
-If your paper describes a modular repository layout, this implementation maps as follows:
-
-- `testbed/` -> `nextcloud-ai/docker-compose.yml`, `prometheus.yml`, `loki-config.yml`, `promtail-config.yml`, `load_simulator.py`
-- `collection/` -> `nextcloud-ai/data_harvest.py`
-- `preprocessing/` -> `data_preprocessing.py`
-- `model/` -> `preprocess_train.py`
-- `xrca/` -> root-cause logic in `live_inference.py`
-- `evaluation/` -> `research_evaluation.py` and utility scripts
 
 ## Citation
 
