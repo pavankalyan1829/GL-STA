@@ -1,0 +1,52 @@
+# Python cache and virtual environments
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+.venv/
+venv/
+env/
+.env
+.env.*
+
+# IDE and OS files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Logs and runtime outputs
+*.log
+*.tmp
+abc.txt
+nextcloud-ai/raw_logs/
+nextcloud-ai/live_data/
+nextcloud-ai/session_summary.json
+nextcloud-ai/injection_log.csv
+nextcloud-ai/metrics_harvested.csv
+nextcloud-ai/logs_harvested.csv
+nextcloud-ai/raw_logs_harvested.txt
+nextcloud-ai/ready_for_training.csv
+
+# Docker/Nextcloud generated runtime state
+nextcloud-ai/db/
+nextcloud-ai/nextcloud_data/
+
+# Generated datasets and model artifacts
+*.keras
+*.pkl
+*.npz
+*.csv
+*.png
+*.jpeg
+*.jpg
+*.h5
+threshold.txt
+anomaly_stats.json
+model_thresholds.json
+
+# Keep documentation assets if they are intentionally added later
+!docs/**/*.png
+!docs/**/*.jpg
+!docs/**/*.jpeg
+!docs/**/*.csv

@@ -1,0 +1,132 @@
+services:
+  # --- 1. CORE STACK ---
+  db:
+    image: mariadb:10.6
+    container_name: db
+    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
+    restart: always
+    cap_add: [NET_ADMIN]
+    volumes:
+      - db_data:/var/lib/mysql
+    environment:
+      - MARIADB_ROOT_PASSWORD=nc_root_password
+      - MARIADB_PASSWORD=nc_password
+      - MARIADB_DATABASE=nextcloud
+      - MARIADB_USER=nextcloud
+
+  redis:
+    image: redis:alpine
+    container_name: redis
+    restart: always
+    volumes:
+      - redis_data:/data
+
+  app:
+    image: nextcloud:latest
+    container_name: app
+    restart: always
+    ports:
+      - "8080:80"
+    volumes:
+      - nextcloud_data:/var/www/html
+    environment:
+      - MYSQL_PASSWORD=nc_password
+      - MYSQL_DATABASE=nextcloud
+      - MYSQL_USER=nextcloud
+      - MYSQL_HOST=db
+      - REDIS_HOST=redis
+      - NEXTCLOUD_ADMIN_USER=admin
+      - NEXTCLOUD_ADMIN_PASSWORD=adminpro_123
+    depends_on: [db, redis]
+
+  # --- 2. THE EXPORTERS (THE FIX) ---
+  mysqld-exporter:
+    image: prom/mysqld-exporter:v0.14.0
+    container_name: mysqld-exporter
+    restart: always # CRITICAL: Fixes the boot race condition
+    environment:
+      # CRITICAL: Bypassing root, using the Nextcloud user with explicit tcp() format
+      - DATA_SOURCE_NAME=nextcloud:nc_password@tcp(db:3306)/
+    depends_on: [db]
+
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.55.0
+    container_name: redis-exporter
+    restart: always
+    environment:
+      - REDIS_ADDR=redis:6379
+    depends_on: [redis]
+
+  blackbox-exporter:
+    image: prom/blackbox-exporter:v0.24.0
+    container_name: blackbox-exporter
+    restart: always
+
+  # --- 3. OBSERVABILITY SUITE ---
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: always
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=15d'
+    ports: ["9090:9090"]
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    restart: always
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    ports: ["8081:8080"]
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    restart: always
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    restart: always
+    volumes:
+      - ./loki-config.yml:/etc/loki/local-config.yaml
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    ports: ["3100:3100"]
+
+  promtail:
+    image: grafana/promtail:latest
+    container_name: promtail
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./promtail-config.yml:/etc/promtail/config.yml
+    command: -config.file=/etc/promtail/config.yml
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: always
+    ports: ["3000:3000"]
+
+volumes:
+  db_data:
+  redis_data:
+  nextcloud_data:
+  prometheus_data:
+  loki_data:
